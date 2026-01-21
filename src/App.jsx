@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, Users, TrendingUp, AlertCircle, Briefcase, ToggleLeft, ToggleRight, Coins, User, BarChart3, Table2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Calculator, Users, TrendingUp, AlertCircle, Coins, User, BarChart3, Table2 } from 'lucide-react';
 
 // --- Shared Components ---
 const Card = ({ children, className = "" }) => (
@@ -14,24 +14,53 @@ const NI_THRESHOLD = 5000; // £5,000 (April 2025)
 const PENSION_RATE = 0.11; // 11% Pension
 const APP_LEVY_RATE = 0.005; // 0.5% Levy
 const BONUS_RATE = 0.10; // 10% Bonus
-const MEDIAN_IMPUTATION = 47500;
+
+const fmt = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
+
+// --- Anonymized Data (Pure Integers & Booleans) ---
+// s: Salary, b: Bonus Eligible, i: Imputed (missing in original)
+const STAFF_DATA = [
+  {s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:65000,b:true,i:false},
+  {s:65000,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:52500,b:true,i:false},{s:55000,b:true,i:false},
+  {s:55000,b:true,i:false},{s:67500,b:true,i:false},{s:60000,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
+  {s:60000,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
+  {s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},
+  {s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:45000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
+  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},
+  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
+  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:false,i:false},{s:47500,b:false,i:true},
+  {s:47500,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:35000,b:true,i:false},{s:40000,b:true,i:false},
+  {s:47500,b:false,i:true},{s:30000,b:false,i:false},{s:52250,b:true,i:false},{s:52250,b:true,i:false},{s:47500,b:true,i:false},
+  {s:52250,b:true,i:false},{s:52250,b:true,i:false},{s:47500,b:true,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},
+  {s:33000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:33000,b:false,i:false},{s:30000,b:false,i:false},
+  {s:33000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
+  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},
+  {s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:37500,b:false,i:false},
+  {s:45000,b:false,i:false},{s:45000,b:false,i:false},{s:55000,b:true,i:false},{s:45000,b:false,i:false},{s:45000,b:false,i:false},
+  {s:60000,b:true,i:false},{s:45000,b:false,i:false},{s:37500,b:false,i:false},{s:55000,b:true,i:false},{s:42500,b:false,i:false},
+  {s:47500,b:false,i:false},{s:47500,b:false,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
+  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:45000,b:false,i:false},{s:35000,b:false,i:false},
+  {s:40000,b:false,i:false},{s:40000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},
+  {s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:30000,b:false,i:false},{s:47500,b:false,i:true},
+  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
+  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
+  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:37500,b:false,i:false},
+  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},
+  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
+  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
+  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:37500,b:false,i:false},
+  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},
+  {s:37500,b:false,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false}
+];
 
 // --- Helper Functions ---
-const detectBonus = (title, salary) => {
-  if (!title) return false;
-  const t = title.toLowerCase();
-  
-  // Rule 1: Salary Threshold
-  if (salary >= 55000) return true;
-
-  // Rule 2: Explicit Titles
-  if (t.includes('senior editor')) return true; 
-  if (t.includes('chief')) return true; 
-  if (t.includes('manager') || t.includes('head') || t.includes('director') || t.includes('publisher')) return true;
-
-  return false;
-};
-
 const calculateTCOE = (baseSalary, bonusAmount = 0) => {
   const pension = baseSalary * PENSION_RATE; // Pension on Base only
   const totalEarnings = baseSalary + bonusAmount;
@@ -41,258 +70,13 @@ const calculateTCOE = (baseSalary, bonusAmount = 0) => {
   return baseSalary + bonusAmount + pension + ni + levy;
 };
 
-const fmt = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
-
 // --- Sub-Component: Salary Modeler ---
 const SalaryModeler = () => {
-  const [data, setData] = useState([]);
   const [underpin, setUnderpin] = useState(3000);
   const [percent, setPercent] = useState(8);
   const [testSalary, setTestSalary] = useState(55000);
   const [includeTCOE, setIncludeTCOE] = useState(false);
   const [includeBonuses, setIncludeBonuses] = useState(false);
-
-  useEffect(() => {
-    // Full Dataset
-    const rawText = `
-1_Catherine_O'HaraEditor-in-Chief, The Lancet RheumatologyUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-1_Catherine_O'HaraEditor-in-Chief, The Lancet Child & Adolescent HealthUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-1_Catherine_O'HaraEditor-in-Chief, The Lancet Diabetes & EndocrinologyUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-1_Catherine_O'HaraEditor-in-Chief, The Lancet Global HealthUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-2_Dan_LewsleyOrigination ManagerUK - London (London Wall)Origination Manager£65,000
-2_Dan_LewsleyArt & Logistics ManagerUK - London (London Wall)Art & Logistics Manager£65,000
-2_Dan_LewsleyManaging EditorUK - London (London Wall)55000
-2_Dan_LewsleyManaging EditorUK - London (London Wall)55000
-2_Dan_LewsleyOperations ManagerUK - London (London Wall)Operations Manager50,000–55,000£52,500
-2_Dan_LewsleyOperations & Project Manager (the Lancet journals)UK - London (London Wall)55000
-3_David_CollingridgeDeputy Editor, The Lancet OncologyUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-3_David_CollingridgeEditor-in-Chief, The Lancet Respiratory MedicineUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-3_David_CollingridgeSenior Publisher, LancetUK - London (London Wall)60000
-3_David_CollingridgeEditor-in-Chief, The Lancet HaematologyUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-3_David_CollingridgeEditor-in-Chief, The Lancet Gastroenterology & HepatologyUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-3_David_CollingridgeSenior PublisherUK - London (London Wall)60000
-4_Fiona_MacnabEditor-in-Chief, The Lancet Planetary HealthUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet NeurologyUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet PsychiatryUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet MicrobeUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet HIVUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet Healthy LongevityUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabI&D Board Engagement DirectorUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-In-Chief, The Lancet Obstetrics, Gynaecology, & Women’s HealthUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabEditor-in-Chief, The Lancet Infectious DiseasesUK - London (London Wall)Editor-in-Chief65,000–70,000£67,500
-4_Fiona_MacnabSenior Editor, The Lancet GroupUK - London (London Wall)Senior Editor40,000–50,000£47,500
-5_Sabine_KleinertSenior Executive EditorUK - London (London Wall)Senior Executive Editor65,000–70,000£65,000.00
-5_Sabine_KleinertSenior Executive EditorUK - London (London Wall)Senior Executive Editor65,000–70,000£65,000.00
-5_Sabine_KleinertSenior Executive EditorUK - London (London Wall)Senior Executive Editor65,000–70,000£65,000.00
-6_Simon_AndersonHead of MarketingUK - London (London Wall)65,000–70,000£65,000.00
-6_Simon_AndersonHead of MultimediaUK - London (London Wall)65,000–70,000£65,000.00
-6_Simon_AndersonHead of Media and CommunicationsUK - London (London Wall)65,000–70,000£65,000.00
-6_Simon_AndersonSenior Product ManagerHome Based - United Kingdom 40,000–50,000£45,000
-6_Simon_AndersonSenior Product ManagerUK - London (London Wall)50,000–60,000£55,000
-8_Anna_ClarkSenior Editor, The Lancet RheumatologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-8_Anna_ClarkDeputy Editor, The Lancet RheumatologyUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-9_Audrey_CeschiaActing Senior Editor, The Lancet Public HealthUK - London (London Wall)Senior Editor40,000–50,000£47,500
-9_Audrey_CeschiaSenior Editor, The Lancet Public HealthUK - London (London Wall)Senior Editor40,000–50,000£47,500
-10_Claudia_SchaferDeputy EditorUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-10_Claudia_SchaferSenior Editor eClinicalMedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-10_Claudia_SchaferSenior Editor, EClinicalMedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-10_Claudia_SchaferSenior Editor-The Lancet eClinicalMedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-10_Claudia_SchaferIn-House Senior Editor for eClinicalMedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-11_Esther_LauDeputy Editor, The Lancet Child & Adolescent HealthUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-12_Julie_StaceyDeputy Editor, eBioMedicineUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-13_Marta_KochDeputy EditorUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-13_Marta_KochSenior Editor, The Lancet Diabetes & EndocrinologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-14_Pooja_JhaSenior Editor, The Lancet Regional Health - EuropeUK - London (London Wall)Senior Editor40,000–50,000£47,500
-16_Yaiza_del_Pozo_MartinSenior Editor, The Lancet Primary CareUK - London (London Wall)Senior Editor40,000–50,000£47,500
-16_Yaiza_del_Pozo_MartinIn-House Senior Editor, The Lancet Primary CareUK - London (London Wall)Senior Editor40,000–50,000£47,500
-17_Zoe_MullanDeputy Editor, The Lancet Global HealthUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-17_Zoe_MullanPrint Content Mgmt Generalist IVUK - London (London Wall)Senior Editor40,000–50,000£47,500
-17_Zoe_MullanActing Senior Editor, The Lancet Global HealthUK - London (London Wall)Senior Editor40,000–50,000£47,500
-19_Bente_BrierleyDeputy Origination ManagerUK - London (London Wall)Deputy Origination Manager45,000–50,000£47,500
-19_Bente_BrierleySenior Production EditorUK - London (London Wall)Senior Production Editor
-19_Bente_BrierleyDeputy Origination ManagerUK - London (London Wall)Deputy Origination Manager45,000–50,000£47,500
-19_Bente_BrierleySenior Production EditorUK - London (London Wall)Production Editor
-19_Bente_BrierleyProduction AssistantUK - London (London Wall)Production Assistant30,000–35,00030,000
-19_Bente_BrierleyProduction AssistantUK - London (London Wall)Production Assistant30,000–35,00030,000
-19_Bente_BrierleySenior Quality ControllerHome Based - United KingdomSenior Quality Controller35,000
-19_Bente_BrierleySenior Production EditorUK - London (London Wall)Senior Production Editor35,000–40,000
-19_Bente_BrierleyProduction ControllerUK - London (London Wall)Production Controller
-19_Bente_BrierleyProduction AssistantUK - London (London Wall)Production Assistant30,000–35,00030,000
-21_Hannah_JonesSenior Deputy Managing EditorUK - London (London Wall)Senior Deputy Managing Editor50,000–55,000£52,250
-21_Hannah_JonesSenior Deputy Managing EditorUK - London (London Wall)Senior Deputy Managing Editor50,000–55,000£52,250
-21_Hannah_JonesDeputy Managing EditorUK - London (London Wall)Deputy Managing Editor45,000–50,000£47,500
-21_Hannah_JonesSenior Deputy Managing EditorUK - London (London Wall)Senior Deputy Managing Editor50,000–55,000£52,250
-21_Hannah_JonesSenior Deputy Managing EditorUK - London (London Wall)Senior Deputy Managing Editor50,000–55,000£52,250
-22_Lucy_BanhamDeputy Managing EditorUK - London (London Wall)Deputy Managing Editor45,000–50,000£47,500
-23_Marco_ConfortiAdministrative AssistantHome Based - United Kingdom 30,000
-23_Marco_ConfortiEditorial AssistantUK - London (London Wall)30,000
-23_Marco_ConfortiSenior Editorial AssistantUK - London (London Wall)£33,000
-23_Marco_ConfortiEditorial AssistantUK - London (London Wall)30,000
-23_Marco_ConfortiUK - London (London Wall)30,000
-23_Marco_ConfortiSenior AdministratorUK - London (London Wall)£33,000
-24_Valerie_WongContractor Analyst III ContractorUK - London (London Wall)30,000
-24_Valerie_WongSenior Editorial AssistantUK - London (London Wall)£33,000
-24_Valerie_WongEditorial AssistantUK - London (London Wall)30,000
-24_Valerie_WongEditorial AssistantUK - London (London Wall)30,000
-24_Valerie_WongEditorial AssistantUK - London (London Wall)30,000
-24_Valerie_WongPayments AdministratorUK - London (London Wall)30,000
-25_Ali_LandmanSenior Editor - The Lancet OncologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-25_Ali_LandmanSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-25_Ali_LandmanSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-25_Ali_LandmanSenior Editor (at The Lancet Oncology)UK - London (London Wall)Senior Editor40,000–50,000£47,500
-25_Ali_LandmanSenior Editor, The Lancet OncologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-26_Emma_GraingerDeputy Editor, The Lancet Respiratory Medicine & Research Integrity Editor, The Lancet GroupUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-26_Emma_GraingerSenior Editor, The Lancet Respiratory MedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-28_Lan-Lan_SmithDeputy Editor, The Lancet HaematologyUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-29_Robert_BrierleySenior Editor, The Lancet Gastroenterology & HepatologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-29_Robert_BrierleyDeputy Editor, The Lancet Gastroenterology & HepatologyUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-32_Alastair_BrownDeputy Manager, The Lancet Planetary HealthUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-34_Elena_Becker-BarrosoDeputy Editor, The Lancet NeurologyUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-36_Joan_MarshSenior Editor - Lancet PsychiatryUK - London (London Wall)Senior Editor40,000–50,000£47,500
-37_Onisillos_SekkidesDeputy Editor, The Lancet MicrobeUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-37_Onisillos_SekkidesActing Senior Editor, The Lancet MicrobeUK - London (London Wall)Senior Editor40,000–50,000£47,500
-37_Onisillos_SekkidesSenior Editor, The Lancet MicrobeUK - London (London Wall)Senior Editor40,000–50,000£47,500
-38_Peter_HaywardSenior Editor, The Lancet HIVUK - London (London Wall)Senior Editor40,000–50,000£47,500
-39_Philippa_HarrisActing Senior Editor, The Lancet Healthy LongevityUK - London (London Wall)Senior Editor40,000–50,000£47,500
-39_Philippa_HarrisSenior Editor, The Lancet Healthy LongevityUK - London (London Wall)Senior Editor40,000–50,000£47,500
-40_Rupa_SarkarDeputy Editor, The Lancet Digital HealthUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-40_Rupa_SarkarSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-42_Sonia_MuliyilSenior Editor, The Lancet Obstetrics, Gynaecology, & Women’s HealthUK - London (London Wall)Senior Editor40,000–50,000£47,500
-42_Sonia_MuliyilDeputy Editor, The Lancet Obstetrics, Gynaecology, & Women’s HealthUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-43_Ursula_HoferDeputy Editor, The Lancet Infectious DiseasesUK - London (London Wall)Deputy Editor50,000–60,000£55,000
-46_Helen_FrankishSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-46_Helen_FrankishSenior Editor - The LancetUK - London (London Wall)Senior Editor40,000–50,000£47,500
-46_Helen_FrankishSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-46_Helen_FrankishSenior Editor (Medical)UK - London (London Wall)Senior Editor (medical)
-48_Pamela_DasExecutive Editor, The LancetUK - London (London Wall)Executive Editor
-48_Pamela_DasExecutive EditorUK - London (London Wall)Executive Editor
-48_Pamela_DasPrint Content Mgmt Generalist IVUK - London (London Wall)Senior Editor40,000–50,000£47,500
-48_Pamela_DasExecutive Editor (Web)Home Based - United KingdomExecutive Editor
-49_Vania_WisdomExecutive EditorUK - London (London Wall)Executive Editor
-49_Vania_WisdomSenior Editor (Medical)UK - London (London Wall)Senior Editor (medical)
-54_Laurie_PymSenior Marketing ManagerUK - London (London Wall)50,000–60,000£55,000
-54_Laurie_PymAssociate Digital Marketing ManagerUK - London (London Wall)35,000–40,000£37,500
-54_Laurie_PymMarketing ManagerUK - London (London Wall)40,000–50,000£45,000
-54_Laurie_PymDigital Marketing ManagerUK - London (London Wall)40,000–50,000£45,000
-54_Laurie_PymSenior Marketing Manager, The LancetUK - London (London Wall)50,000–60,000£55,000
-54_Laurie_PymMarketing ManagerUK - London (London Wall)40,000–50,000£45,000
-54_Laurie_PymDigital Marketing Manager, The Lancet GroupUK - London (London Wall)40,000–50,000£45,000
-55_Leon_TernerSenior Infographics Designer & Producer (The Lancet)UK - London (London Wall)50,000–60,000
-55_Leon_TernerMultimedia ProducerUK - London (London Wall)Senior illustrator40,000–45,000
-56_Seil_CollinsMedia & Communications CoordinatorUK - London (London Wall)Media & Communications Coordinator35,000–40,000£37,500
-56_Seil_CollinsSenior Media & Communications Manager, The LancetUK - London (London Wall)50,000-60,000£55,000
-56_Seil_CollinsCommunications OfficerUK - London (London Wall)40,000–45,000£42,500
-56_Seil_CollinsCommunications Manager (Social Media & Digital)UK - London (London Wall)45,000-50,000£47,500
-56_Seil_CollinsInternal Communications ManagerUK - London (London Wall)45,000-50,000£47,500
-64_Charlotte_RowbottomSenior Editor – eClinicalMedicine, The Lancet Discovery Science (12 months fixed term)UK - London (London Wall)Senior Editor40,000–50,000£47,500
-71_Hannah_RalphSenior EditorHome Based - United KingdomSenior Editor40,000–50,000£47,500
-71_Hannah_RalphSenior Editor (maternity cover)UK - London (London Wall)Senior Editor40,000–50,000£47,500
-71_Hannah_RalphSenior Editor - The Lancet’s eBioMedicineHome Based - United KingdomSenior Editor40,000–50,000£47,500
-71_Hannah_RalphSenior Editor, EBioMedicineUK - London (London Wall)Senior Editor40,000–50,000£47,500
-71_Hannah_RalphSenior EditorUK - London (London Wall)Senior Editor40,000–50,000£47,500
-88_Helen_BuddSenior IllustratorUK - London (London Wall)Senior Illustrator40,000–45,000
-88_Helen_BuddProduction EditorUK - London (London Wall)Production Editor30,000–35,000
-88_Helen_BuddSenior Production EditorUK - London (London Wall)Senior Production Editor35,000–40,000
-88_Helen_BuddSenior Prodution EditorUK - London (London Wall)Senior Production Editor35,000–40,000
-88_Helen_BuddProofreader/Quality ControllerUK - London (London Wall)Quality Controller30,000–35,000
-88_Helen_BuddProduction EditorUK - London (London Wall)Production Editor30,000–35,000
-90_Victoria_DennyProduction Editor - part time (4 days per week)UK - London (London Wall)Production Editor30,000–35,000
-90_Victoria_DennyProduction Editor - part time (2.5 days per week)Home Based - United KingdomProduction Editor30,000–35,000
-90_Victoria_DennyProduction EditorUK - London (London Wall)Production Editor30,000–35,000
-90_Victoria_DennyIllustrator, The LancetUK - London (London Wall)Illustrator
-90_Victoria_DennyProduction EditorUK - London (London Wall)Production Assistant30,000–35,00030,000
-90_Victoria_DennySenior Quality ControllerUK - London (London Wall)Senior Quality Controller
-98_Ashley_CooperSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-98_Ashley_CooperSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-98_Ashley_CooperSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-98_Ashley_CooperSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-98_Ashley_CooperSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK-Oxford (Nielsen House)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-99_Helen_PennySenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK-Oxford (Nielsen House)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-100_Kayleigh_HookAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-101_Laura_PryceSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant EditorUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-102_Tim_DehnelSenior Assistant Editor, The Lancet JournalsUK - London (London Wall)Senior Assistant Editor40,000–45,000£42,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-103_Gabriella_MerryAssistant EditorUK - London (London Wall)Assistant Editor35,000–40,000£37,500
-134_Laura_HartSenior Editor, The Lancet NeurologyUK - London (London Wall)Senior Editor40,000–50,000£47,500
-153_Marco_De_AmbrogiSenior Editor, The Lancet Infectious DiseasesHome Based - United KingdomSenior Editor40,000–50,000£47,500
-153_Marco_De_AmbrogiSenior Editor, The Lancet Infectious DiseasesUK - London (London Wall)Senior Editor40,000–50,000£47,500
-`;
-
-    const lines = rawText.trim().split('\n');
-    const parsed = lines.map((line, idx) => {
-      let salary = null;
-      let isImputed = false;
-
-      // Clean Text & Extract
-      const currencyMatch = line.match(/£([\d,]+)/);
-      if (currencyMatch) {
-        salary = parseFloat(currencyMatch[1].replace(/,/g, ''));
-      } else {
-        const endNumberMatch = line.match(/(?<![–-])\b(\d{2,3},?\d{3})\s*$/);
-        if (endNumberMatch) {
-          salary = parseFloat(endNumberMatch[1].replace(/,/g, ''));
-        }
-      }
-
-      if (!salary || isNaN(salary) || salary === 0) {
-        salary = MEDIAN_IMPUTATION;
-        isImputed = true;
-      }
-
-      let title = "Staff Role";
-      const titleMatch = line.match(/(?:UK\s?-\s?London|Home Based|UK-Oxford).*?([A-Za-z\s&]+?)(?=\d|£|$)/);
-      if (titleMatch && titleMatch[1]) {
-        title = titleMatch[1].replace(/\(London Wall\)/, '').trim();
-      }
-
-      return {
-        id: idx,
-        name: `Staff Member ${idx + 1}`,
-        title: title || "Staff Role",
-        salary: salary,
-        isImputed: isImputed,
-        hasBonus: detectBonus(title, salary)
-      };
-    });
-
-    setData(parsed);
-  }, []);
 
   const stats = useMemo(() => {
     let totalOld = 0;
@@ -300,18 +84,18 @@ const SalaryModeler = () => {
     let countUnderpin = 0;
     let countPercent = 0;
     
-    const rows = data.map(emp => {
-      const pctIncrease = emp.salary * (percent / 100);
+    const rows = STAFF_DATA.map((emp, idx) => {
+      const pctIncrease = emp.s * (percent / 100);
       const increase = Math.max(pctIncrease, underpin);
-      const newSalary = emp.salary + increase;
+      const newSalary = emp.s + increase;
       const isUnderpin = increase === underpin;
 
       // Bonus Logic
-      const oldBonus = (emp.hasBonus && includeBonuses) ? emp.salary * BONUS_RATE : 0;
-      const newBonus = (emp.hasBonus && includeBonuses) ? newSalary * BONUS_RATE : 0;
+      const oldBonus = (emp.b && includeBonuses) ? emp.s * BONUS_RATE : 0;
+      const newBonus = (emp.b && includeBonuses) ? newSalary * BONUS_RATE : 0;
 
       // Calculate TCOE versions
-      const tcoeOld = calculateTCOE(emp.salary, oldBonus);
+      const tcoeOld = calculateTCOE(emp.s, oldBonus);
       const tcoeNew = calculateTCOE(newSalary, newBonus);
       const tcoeIncrease = tcoeNew - tcoeOld;
 
@@ -319,15 +103,21 @@ const SalaryModeler = () => {
         totalOld += tcoeOld;
         totalNew += tcoeNew;
       } else {
-        totalOld += emp.salary + oldBonus;
+        totalOld += emp.s + oldBonus;
         totalNew += newSalary + newBonus;
       }
 
       if (isUnderpin) countUnderpin++; else countPercent++;
 
       return { 
-        ...emp, newSalary, increase, isUnderpin,
-        tcoeOld, tcoeNew, tcoeIncrease, oldBonus, newBonus
+        id: idx + 1,
+        salary: emp.s,
+        newSalary, 
+        increase, 
+        isUnderpin,
+        tcoeOld, tcoeNew, tcoeIncrease, oldBonus, newBonus,
+        hasBonus: emp.b,
+        isImputed: emp.i
       };
     });
 
@@ -337,7 +127,7 @@ const SalaryModeler = () => {
       pctIncreaseTotal: totalOld ? ((totalNew - totalOld) / totalOld) * 100 : 0,
       countUnderpin, countPercent, rows
     };
-  }, [data, underpin, percent, includeTCOE, includeBonuses]);
+  }, [underpin, percent, includeTCOE, includeBonuses]);
 
   // Individual Calculator
   const potUnderpin = underpin;
@@ -345,7 +135,7 @@ const SalaryModeler = () => {
   const indIncrease = Math.max(potPercent, potUnderpin);
   const indNew = parseFloat(testSalary) + indIncrease;
   
-  // Individual TCOE (Base + No Bonus for simplicity)
+  // Individual TCOE
   const indPension = indNew * PENSION_RATE;
   const indNI = Math.max(0, indNew - NI_THRESHOLD) * NI_RATE;
   const indLevy = indNew * APP_LEVY_RATE;
@@ -458,37 +248,50 @@ const SalaryModeler = () => {
           </div>
       </Card>
 
+      {/* Assumptions Banner */}
+      {(includeTCOE || includeBonuses) && (
+         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm flex items-start gap-2">
+            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <div>
+               <strong>Active Cost Assumptions:</strong>
+               <ul className="list-disc ml-4 mt-1 space-y-1">
+                 {includeTCOE && <li><strong>TCOE (April 2025):</strong> 15% NI ({'>'}£5k), 0.5% Levy, 11% Pension (on Base Salary).</li>}
+                 {includeBonuses && <li><strong>Bonuses:</strong> 10% added to base salary for eligible roles (indicated by <Coins size={12} className="inline"/>). NI/Levy applied to bonus; Pension applied to Base only.</li>}
+               </ul>
+            </div>
+         </div>
+      )}
+
       {/* Staff Table */}
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-          <h3 className="font-semibold text-slate-700 flex items-center gap-2"><Table2 size={18} /> Staff List ({data.length})</h3>
+          <h3 className="font-semibold text-slate-700 flex items-center gap-2"><Table2 size={18} /> Staff List ({STATS_DATA_LENGTH})</h3>
         </div>
         <div className="overflow-x-auto max-h-96 overflow-y-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-slate-100 text-slate-600 font-medium sticky top-0">
               <tr>
-                <th className="p-3">Name</th>
-                <th className="p-3">Title</th>
-                <th className="p-3 text-right">Current</th>
-                <th className="p-3 text-right">Increase</th>
-                <th className="p-3 text-right">New</th>
+                <th className="p-3">Staff ID</th>
+                <th className="p-3 text-right">Current {includeTCOE ? '(Cost)' : '(Pay)'}</th>
+                <th className="p-3 text-right">Increase {includeTCOE ? '(Cost)' : '(Pay)'}</th>
+                <th className="p-3 text-right">New {includeTCOE ? '(Cost)' : '(Pay)'}</th>
                 <th className="p-3 text-center">Type</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {stats.rows.sort((a,b) => b.increase - a.increase).map((row, idx) => {
+              {stats.rows.sort((a,b) => b.increase - a.increase).map((row) => {
                  const displaySalary = includeTCOE ? row.tcoeOld : (row.salary + (includeBonuses ? row.oldBonus : 0));
                  const displayGrossIncrease = (row.newSalary + (includeBonuses ? row.newBonus : 0)) - (row.salary + (includeBonuses ? row.oldBonus : 0));
                  const finalDisplayIncrease = includeTCOE ? row.tcoeIncrease : displayGrossIncrease;
                  const displayNew = includeTCOE ? row.tcoeNew : (row.newSalary + (includeBonuses ? row.newBonus : 0));
 
                  return (
-                  <tr key={idx} className="hover:bg-slate-50">
+                  <tr key={row.id} className="hover:bg-slate-50">
                     <td className="p-3 font-medium text-slate-700 flex items-center gap-2">
-                        {row.name}
+                        Member {row.id}
                         {row.hasBonus && includeBonuses && <Coins size={12} className="text-amber-500" title="Bonus Eligible" />}
+                        {row.isImputed && <span className="text-amber-500 text-xs ml-1" title="Imputed">*</span>}
                     </td>
-                    <td className="p-3 text-slate-500 truncate max-w-xs">{row.title}</td>
                     <td className="p-3 text-right font-mono">{fmt(displaySalary)}</td>
                     <td className={`p-3 text-right font-mono ${includeTCOE ? 'text-amber-700' : 'text-green-600'}`}>+{fmt(finalDisplayIncrease)}</td>
                     <td className="p-3 text-right font-mono font-bold text-slate-700">{fmt(displayNew)}</td>
@@ -507,6 +310,8 @@ const SalaryModeler = () => {
     </div>
   );
 };
+
+const STATS_DATA_LENGTH = STAFF_DATA.length;
 
 // --- Sub-Component: Break-Even Visualizer ---
 const BreakEvenVisualizer = () => {
@@ -616,7 +421,7 @@ const App = () => {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Union Pay Calculator</h1>
-          <p className="text-slate-600">Cost modeling and break-even analysis for 2025 pay claim.</p>
+          <p className="text-slate-600">Cost modelling and break-even analysis for 2026 pay claim.</p>
         </div>
 
         {/* Tab Switcher */}
