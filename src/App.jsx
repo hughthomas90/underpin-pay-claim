@@ -336,6 +336,11 @@ const SalaryModeler = () => {
               {/* Staff Group Dots */}
               {graphData.map((group) => {
                 const radius = Math.min(25, 3 + Math.sqrt(group.count) * 2); // Dynamic sizing logic
+                
+                // Calculate extra benefit for underpin recipients
+                const percentageAmount = group.salary * (percent / 100);
+                const extraBenefit = group.increase - percentageAmount;
+
                 return (
                   <g key={group.salary} className="group">
                     <circle 
@@ -348,20 +353,29 @@ const SalaryModeler = () => {
                     />
                     {/* Tooltip on Hover via Group and Peer Element */}
                     <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                       {/* Background Box */}
                        <rect 
-                         x={plotX(group.salary) - 60} 
-                         y={plotY(group.increase) - 50} 
-                         width="120" 
-                         height="40" 
+                         x={plotX(group.salary) - 70} 
+                         y={plotY(group.increase) - (group.isUnderpin ? 65 : 50)} 
+                         width="140" 
+                         height={group.isUnderpin ? 55 : 40} 
                          rx="4" 
                          fill="#1e293b" 
                        />
-                       <text x={plotX(group.salary)} y={plotY(group.increase) - 30} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
+                       {/* Salary Label */}
+                       <text x={plotX(group.salary)} y={plotY(group.increase) - (group.isUnderpin ? 45 : 30)} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
                          £{group.salary.toLocaleString()}
                        </text>
-                       <text x={plotX(group.salary)} y={plotY(group.increase) - 18} textAnchor="middle" fill="#cbd5e1" fontSize="9">
+                       {/* Count & Total Increase */}
+                       <text x={plotX(group.salary)} y={plotY(group.increase) - (group.isUnderpin ? 32 : 18)} textAnchor="middle" fill="#cbd5e1" fontSize="9">
                          {group.count} staff • +£{Math.round(group.increase).toLocaleString()}
                        </text>
+                       {/* Underpin Bonus Line */}
+                       {group.isUnderpin && (
+                           <text x={plotX(group.salary)} y={plotY(group.increase) - 19} textAnchor="middle" fill="#d8b4fe" fontSize="9" fontWeight="bold">
+                             (Benefit: +£{Math.round(extraBenefit).toLocaleString()})
+                           </text>
+                       )}
                     </g>
                   </g>
                 );
