@@ -1,5 +1,39 @@
 import React, { useState, useMemo } from 'react';
-import { Calculator, Users, TrendingUp, AlertCircle, Coins, User, BarChart3, Table2 } from 'lucide-react';
+
+// --- Internal Icons (Replaces lucide-react to fix import errors) ---
+const Icon = ({ children, className = "" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+
+const Calculator = ({ className = "" }) => (
+  <Icon className={className}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></Icon>
+);
+const Users = ({ className = "" }) => (
+  <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Icon>
+);
+const TrendingUp = ({ className = "" }) => (
+  <Icon className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></Icon>
+);
+const AlertCircle = ({ className = "" }) => (
+  <Icon className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></Icon>
+);
+const Coins = ({ className = "" }) => (
+  <Icon className={className}><circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></Icon>
+);
+const User = ({ className = "" }) => (
+  <Icon className={className}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></Icon>
+);
+const BarChart3 = ({ className = "" }) => (
+  <Icon className={className}><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></Icon>
+);
+const Table2 = ({ className = "" }) => (
+  <Icon className={className}><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></Icon>
+);
+const Info = ({ className = "" }) => (
+  <Icon className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></Icon>
+);
 
 // --- Shared Components ---
 const Card = ({ children, className = "" }) => (
@@ -17,47 +51,49 @@ const BONUS_RATE = 0.10; // 10% Bonus
 
 const fmt = (n) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
 
-// --- Anonymized Data (Pure Integers & Booleans) ---
-// s: Salary, b: Bonus Eligible, i: Imputed (missing in original)
+// --- Anonymized Data ---
+// s: Salary, b: Bonus Eligible (Explicit from user data), i: Imputed (All false now)
+// n=198
 const STAFF_DATA = [
-  {s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:65000,b:true,i:false},
-  {s:65000,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:52500,b:true,i:false},{s:55000,b:true,i:false},
-  {s:55000,b:true,i:false},{s:67500,b:true,i:false},{s:60000,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
-  {s:60000,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
-  {s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},{s:67500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:65000,b:true,i:false},
-  {s:65000,b:true,i:false},{s:65000,b:true,i:false},{s:45000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
-  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},
-  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
-  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:false,i:false},{s:47500,b:false,i:true},
-  {s:47500,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:35000,b:true,i:false},{s:40000,b:true,i:false},
-  {s:47500,b:false,i:true},{s:30000,b:false,i:false},{s:52250,b:true,i:false},{s:52250,b:true,i:false},{s:47500,b:true,i:false},
-  {s:52250,b:true,i:false},{s:52250,b:true,i:false},{s:47500,b:true,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},
-  {s:33000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:33000,b:false,i:false},{s:30000,b:false,i:false},
-  {s:33000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},{s:30000,b:false,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
-  {s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},
-  {s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:55000,b:true,i:false},{s:47500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:55000,b:true,i:false},{s:37500,b:false,i:false},
-  {s:45000,b:false,i:false},{s:45000,b:false,i:false},{s:55000,b:true,i:false},{s:45000,b:false,i:false},{s:45000,b:false,i:false},
-  {s:60000,b:true,i:false},{s:45000,b:false,i:false},{s:37500,b:false,i:false},{s:55000,b:true,i:false},{s:42500,b:false,i:false},
-  {s:47500,b:false,i:false},{s:47500,b:false,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},
-  {s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:45000,b:false,i:false},{s:35000,b:false,i:false},
-  {s:40000,b:false,i:false},{s:40000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},
-  {s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:35000,b:false,i:false},{s:30000,b:false,i:false},{s:47500,b:false,i:true},
-  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
-  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
-  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:37500,b:false,i:false},
-  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},
-  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
-  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},
-  {s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:42500,b:false,i:false},{s:37500,b:false,i:false},
-  {s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},{s:37500,b:false,i:false},
-  {s:37500,b:false,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false},{s:47500,b:true,i:false}
+  {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:65000,b:true,i:false},
+  {s:65000,b:true,i:false}, {s:45000,b:true,i:false}, {s:45000,b:true,i:false}, {s:52500,b:true,i:false}, {s:55000,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:67500,b:true,i:false}, {s:60000,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false},
+  {s:60000,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false},
+  {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false}, {s:67500,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:85000,b:true,i:false}, {s:85000,b:true,i:false}, {s:85000,b:true,i:false}, {s:65000,b:true,i:false},
+  {s:65000,b:true,i:false}, {s:65000,b:true,i:false}, {s:45000,b:true,i:false}, {s:55000,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:55000,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:55000,b:true,i:false}, {s:55000,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:37500,b:false,i:false},
+  {s:47500,b:true,i:false}, {s:37500,b:false,i:false}, {s:30000,b:false,i:false}, {s:30000,b:false,i:false}, {s:35000,b:false,i:false},
+  {s:37500,b:false,i:false}, {s:40000,b:false,i:false}, {s:30000,b:false,i:false}, {s:55000,b:true,i:false}, {s:60000,b:false,i:false},
+  {s:55000,b:false,i:false}, {s:60000,b:false,i:false}, {s:60000,b:false,i:false}, {s:50000,b:true,i:false}, {s:30000,b:false,i:false},
+  {s:30000,b:false,i:false}, {s:33000,b:false,i:false}, {s:30000,b:false,i:false}, {s:30000,b:false,i:false}, {s:33000,b:false,i:false},
+  {s:30000,b:false,i:false}, {s:33000,b:false,i:false}, {s:30000,b:false,i:false}, {s:30000,b:false,i:false}, {s:30000,b:false,i:false},
+  {s:30000,b:false,i:false}, {s:30000,b:false,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:55000,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:55000,b:true,i:false}, {s:55000,b:true,i:false}, {s:55000,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:55000,b:true,i:false},
+  {s:55000,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:70000,b:true,i:false},
+  {s:65000,b:true,i:false}, {s:65000,b:true,i:false}, {s:47500,b:true,i:false}, {s:65000,b:true,i:false}, {s:65000,b:true,i:false},
+  {s:65000,b:true,i:false}, {s:55000,b:true,i:false}, {s:37500,b:false,i:false}, {s:45000,b:false,i:false}, {s:45000,b:false,i:false},
+  {s:55000,b:false,i:false}, {s:45000,b:true,i:false}, {s:45000,b:false,i:false}, {s:50000,b:false,i:false}, {s:45000,b:false,i:false},
+  {s:37500,b:false,i:false}, {s:55000,b:true,i:false}, {s:42500,b:false,i:false}, {s:47500,b:false,i:false}, {s:47500,b:false,i:false},
+  {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false},
+  {s:47500,b:true,i:false}, {s:42500,b:false,i:false}, {s:32500,b:false,i:false}, {s:37500,b:false,i:false}, {s:37500,b:false,i:false},
+  {s:32500,b:false,i:false}, {s:32500,b:false,i:false}, {s:32500,b:false,i:false}, {s:32500,b:false,i:false}, {s:32500,b:false,i:false},
+  {s:37500,b:false,i:false}, {s:30000,b:false,i:false}, {s:32500,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false},
+  {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:35000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false},
+  {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:40000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false},
+  {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false}, {s:36000,b:false,i:false},
+  {s:47500,b:true,i:false}, {s:47500,b:true,i:false}, {s:47500,b:true,i:false}
 ];
 
 // --- Helper Functions ---
@@ -129,6 +165,24 @@ const SalaryModeler = () => {
     };
   }, [underpin, percent, includeTCOE, includeBonuses]);
 
+  // Aggregate Data for Graph Grouping
+  const graphData = useMemo(() => {
+    const groups = {};
+    stats.rows.forEach(row => {
+      const key = row.salary;
+      if (!groups[key]) {
+        groups[key] = {
+          salary: row.salary,
+          increase: row.increase, // This is GROSS increase
+          isUnderpin: row.isUnderpin,
+          count: 0
+        };
+      }
+      groups[key].count += 1;
+    });
+    return Object.values(groups);
+  }, [stats]);
+
   // Individual Calculator
   const potUnderpin = underpin;
   const potPercent = testSalary * (percent / 100);
@@ -141,13 +195,28 @@ const SalaryModeler = () => {
   const indLevy = indNew * APP_LEVY_RATE;
   const indTotalTCOE = indNew + indPension + indNI + indLevy;
 
+  // --- Population Graph Logic ---
+  const maxSalary = 100000;
+  const maxIncrease = 15000;
+  const width = 800;
+  const height = 300;
+  const padding = 40;
+  const graphWidth = width - padding * 2;
+  const graphHeight = height - padding * 2;
+
+  const plotX = (salary) => padding + (salary / maxSalary) * graphWidth;
+  const plotY = (inc) => (height - padding) - (inc / maxIncrease) * graphHeight;
+
+  const lineUnderpinY = plotY(underpin);
+  const linePercentEnd = plotY(maxSalary * (percent / 100));
+
   return (
     <div className="space-y-6">
       {/* Controls */}
       <Card className="p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <Users size={20} className="text-blue-600" />
+            <Users className="text-blue-600" />
             Scenario Configuration
           </h2>
           <div className="flex flex-col items-end gap-2">
@@ -178,12 +247,34 @@ const SalaryModeler = () => {
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Underpin Amount (£)</label>
-            <input type="number" value={underpin} onChange={(e) => setUnderpin(Number(e.target.value))} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+            <div className="flex justify-between mb-2">
+              <label className="font-medium text-slate-700">Underpin Amount</label>
+              <span className="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded">{fmt(underpin)}</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="10000" 
+              step="100" 
+              value={underpin} 
+              onChange={(e) => setUnderpin(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Percentage Increase (%)</label>
-            <input type="number" value={percent} onChange={(e) => setPercent(Number(e.target.value))} className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 outline-none" />
+            <div className="flex justify-between mb-2">
+              <label className="font-medium text-slate-700">Percentage Increase</label>
+              <span className="font-bold text-green-700 bg-green-50 px-2 py-1 rounded">{percent}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="0.5" 
+              max="20" 
+              step="0.5" 
+              value={percent} 
+              onChange={(e) => setPercent(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+            />
           </div>
         </div>
       </Card>
@@ -212,10 +303,78 @@ const SalaryModeler = () => {
         </Card>
       </div>
 
+      {/* Population Graph */}
+      <Card className="p-6 overflow-hidden flex flex-col items-center justify-center">
+          <div className="w-full flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <BarChart3 className="text-blue-600" />
+              Staff Distribution
+            </h2>
+            <div className="flex gap-4 text-xs">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-purple-600"></span> Underpin</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-600"></span> Percentage</span>
+            </div>
+          </div>
+          <div className="relative w-full overflow-x-auto">
+            <svg width={width} height={height} className="border border-slate-100 bg-white shadow-sm rounded">
+              {/* Axes Labels */}
+              <text x={width / 2} y={height - 10} textAnchor="middle" fill="#94a3b8" fontSize="10">Base Salary (£)</text>
+              <text x={12} y={height / 2} textAnchor="middle" fill="#94a3b8" fontSize="10" transform={`rotate(-90, 12, ${height / 2})`}>Increase (£)</text>
+
+              {/* Grid Horizontal */}
+              {[0, 2500, 5000, 7500, 10000, 12500, 15000].map(val => (
+                <g key={val}>
+                  <line x1={padding} y1={plotY(val)} x2={width - padding} y2={plotY(val)} stroke="#f1f5f9" strokeDasharray="3 3" />
+                  <text x={padding - 5} y={plotY(val) + 3} textAnchor="end" fontSize="9" fill="#94a3b8">{val/1000}k</text>
+                </g>
+              ))}
+              
+              {/* Lines */}
+              <line x1={padding} y1={lineUnderpinY} x2={width - padding} y2={lineUnderpinY} stroke="#9333ea" strokeWidth="2" strokeOpacity="0.3" />
+              <line x1={padding} y1={plotY(0)} x2={plotX(maxSalary)} y2={linePercentEnd} stroke="#2563eb" strokeWidth="2" strokeOpacity="0.3" />
+
+              {/* Staff Group Dots */}
+              {graphData.map((group) => {
+                const radius = Math.min(25, 3 + Math.sqrt(group.count) * 2); // Dynamic sizing logic
+                return (
+                  <g key={group.salary} className="group">
+                    <circle 
+                      cx={plotX(group.salary)}
+                      cy={plotY(group.increase)}
+                      r={radius}
+                      fill={group.isUnderpin ? '#9333ea' : '#2563eb'}
+                      opacity="0.8"
+                      className="transition-opacity cursor-pointer stroke-white stroke-2 hover:opacity-100"
+                    />
+                    {/* Tooltip on Hover via Group and Peer Element */}
+                    <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                       <rect 
+                         x={plotX(group.salary) - 60} 
+                         y={plotY(group.increase) - 50} 
+                         width="120" 
+                         height="40" 
+                         rx="4" 
+                         fill="#1e293b" 
+                       />
+                       <text x={plotX(group.salary)} y={plotY(group.increase) - 30} textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">
+                         £{group.salary.toLocaleString()}
+                       </text>
+                       <text x={plotX(group.salary)} y={plotY(group.increase) - 18} textAnchor="middle" fill="#cbd5e1" fontSize="9">
+                         {group.count} staff • +£{Math.round(group.increase).toLocaleString()}
+                       </text>
+                    </g>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+          {includeTCOE && <div className="text-xs text-slate-400 mt-2 italic text-center">Graph plots Gross Increase mechanisms only. TCOE variations not shown on chart.</div>}
+      </Card>
+
       {/* Individual Check */}
       <Card className="p-6 border-slate-200">
           <div className="flex items-center gap-2 mb-4 text-blue-600">
-            <Calculator size={20} />
+            <Calculator />
             <h2 className="text-lg font-semibold text-slate-800">Individual Check</h2>
           </div>
           <div className="space-y-4">
@@ -251,12 +410,12 @@ const SalaryModeler = () => {
       {/* Assumptions Banner */}
       {(includeTCOE || includeBonuses) && (
          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded text-amber-800 text-sm flex items-start gap-2">
-            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <AlertCircle className="mt-0.5 flex-shrink-0" />
             <div>
                <strong>Active Cost Assumptions:</strong>
                <ul className="list-disc ml-4 mt-1 space-y-1">
                  {includeTCOE && <li><strong>TCOE (April 2025):</strong> 15% NI ({'>'}£5k), 0.5% Levy, 11% Pension (on Base Salary).</li>}
-                 {includeBonuses && <li><strong>Bonuses:</strong> 10% added to base salary for eligible roles (indicated by <Coins size={12} className="inline"/>). NI/Levy applied to bonus; Pension applied to Base only.</li>}
+                 {includeBonuses && <li><strong>Bonuses:</strong> 10% added to base salary for eligible roles (indicated by <Coins className="inline"/>). NI/Levy applied to bonus; Pension applied to Base only.</li>}
                </ul>
             </div>
          </div>
@@ -265,7 +424,7 @@ const SalaryModeler = () => {
       {/* Staff Table */}
       <Card className="overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-          <h3 className="font-semibold text-slate-700 flex items-center gap-2"><Table2 size={18} /> Staff List ({STATS_DATA_LENGTH})</h3>
+          <h3 className="font-semibold text-slate-700 flex items-center gap-2"><Table2 /> Staff List ({STATS_DATA_LENGTH})</h3>
         </div>
         <div className="overflow-x-auto max-h-96 overflow-y-auto">
           <table className="w-full text-sm text-left">
@@ -289,7 +448,7 @@ const SalaryModeler = () => {
                   <tr key={row.id} className="hover:bg-slate-50">
                     <td className="p-3 font-medium text-slate-700 flex items-center gap-2">
                         Member {row.id}
-                        {row.hasBonus && includeBonuses && <Coins size={12} className="text-amber-500" title="Bonus Eligible" />}
+                        {row.hasBonus && includeBonuses && <Coins className="text-amber-500" title="Bonus Eligible" />}
                         {row.isImputed && <span className="text-amber-500 text-xs ml-1" title="Imputed">*</span>}
                     </td>
                     <td className="p-3 text-right font-mono">{fmt(displaySalary)}</td>
@@ -349,7 +508,7 @@ const BreakEvenVisualizer = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="p-6 lg:col-span-1 h-fit space-y-8">
           <div className="flex items-center gap-2 text-blue-600 border-b border-slate-100 pb-4">
-            <TrendingUp size={20} />
+            <TrendingUp />
             <h2 className="text-lg font-semibold text-slate-800">Parameters</h2>
           </div>
           <div>
@@ -368,7 +527,7 @@ const BreakEvenVisualizer = () => {
           </div>
           <div className="pt-6 border-t border-slate-200">
             <div className="flex items-center gap-2 mb-4 text-purple-600">
-                <User size={20} />
+                <User />
                 <h3 className="font-bold text-slate-800">Check Your Position</h3>
             </div>
             <div className="mb-4">
@@ -421,7 +580,7 @@ const App = () => {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-800 mb-2">Union Pay Calculator</h1>
-          <p className="text-slate-600">Cost modelling and break-even analysis for 2026 pay claim.</p>
+          <p className="text-slate-600">Cost modeling and break-even analysis for 2025 pay claim.</p>
         </div>
 
         {/* Tab Switcher */}
@@ -430,13 +589,13 @@ const App = () => {
             onClick={() => setActiveTab('modeler')}
             className={`pb-3 px-1 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === 'modeler' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <Table2 size={16} /> Salary Modeler
+            <Table2 className="w-4 h-4" /> Salary Modeler
           </button>
           <button 
             onClick={() => setActiveTab('visualizer')}
             className={`pb-3 px-1 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === 'visualizer' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
           >
-            <BarChart3 size={16} /> Break-Even Graph
+            <BarChart3 className="w-4 h-4" /> Break-Even Graph
           </button>
         </div>
 
